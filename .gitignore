@@ -1,0 +1,44 @@
+# Build output
+build/
+Debug/
+Release/
+out/
+
+# CubeMX temp
+mx.scratch
+
+# Keep STM32Cube bundle/toolchain pins
+!.settings
+
+# Compiled artifacts (in case they end up outside build/)
+*.o
+*.d
+*.su
+*.cyclo
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+
+# CMake user-local files
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+
+# clangd index cache
+.cache/
+
+# Per-user debug launch configs (old CubeIDE)
+*.launch
+
+# Editor / OS junk
+.vscode/*
+!.vscode/settings.json
+!.vscode/c_cpp_properties.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db

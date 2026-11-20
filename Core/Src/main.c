@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,6 +46,8 @@ I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+static const uint8_t MCP9808_ADDR = 0x18 << 1; // MCP9808 I2C address (shifted for HAL)
+static const uint8_t MCP9808_REG_AMBIENT_TEMP = 0x05; // Ambient temperature register
 
 /* USER CODE END PV */
 
@@ -70,6 +73,10 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  HAL_StatusTypeDef status;
+  uint8_t buf[32];
+  int16_t temp_raw;
+  float temp_c;
 
   /* USER CODE END 1 */
 
@@ -101,6 +108,42 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    // Tell the MCP9808 to read the ambient temperature
+    buf[0] = MCP9808_REG_AMBIENT_TEMP;
+    status = HAL_I2C_Master_Transmit(&hi2c1, MCP9808_ADDR, buf, 1, HAL_MAX_DELAY);
+    if (status != HAL_OK) {
+      strcpy((char*)buf, "Error Tx\r\n");
+    } else {
+
+      // Read 2 bytes of temperature data
+      status = HAL_I2C_Master_Receive(&hi2c1, MCP9808_ADDR, buf, 2, HAL_MAX_DELAY);
+      if (status != HAL_OK) {
+        strcpy((char*)buf, "Error Rx\r\n");
+
+      } else {
+        // Combine the two bytes into a single 16-bit value and clear upper bits
+        temp_raw = (buf[0] << 8) | buf[1];
+        temp_raw &= 0x1FFF; // drop alert flags
+
+        temp_c = (temp_raw & 0x0FFF) / 16.0f; // Convert to Celsius and account for decimal
+
+        if (temp_raw & 0x1000) { // Check sign bit
+          temp_c -= 256.0f;
+        }
+
+        // Prepare the output string
+        temp_c *= 100; // Convert to integer representation for two decimal places
+        sprintf((char*)buf, "Temp: %u.%02u C\r\n", (unsigned int)temp_c / 100, (unsigned int)temp_c % 100);
+      }
+
+    }
+
+    // Send the temperature reading over UART
+    HAL_UART_Transmit(&huart2, buf, strlen((char *)buf), HAL_MAX_DELAY);
+
+    // Wait
+    HAL_Delay(500);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
